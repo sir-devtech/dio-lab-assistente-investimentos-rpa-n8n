@@ -1,13 +1,15 @@
 # Assistente de investimentos com RPA, n8n e IA
 
-Fork do lab da DIO. Eu completei o fluxo: o Python lê os clientes, o n8n cruza com o CSV e devolve uma mensagem por perfil. O print da execução está em `docs/execucao.png`.
+Fork do lab da DIO. O Python lê os clientes, o n8n cruza com o CSV, a Gemini gera o corpo do e-mail e a resposta volta no webhook. Print da execução em `docs/execucao.png`.
 
-## O que já funciona (MVP)
+## O que já funciona
 
 1. RPA em `rpa/extrair_clientes.py` (e o notebook com o webhook ligado).
-2. Workflow em `n8n/workflow.json`: Webhook → HTTP (CSV) → Code → Respond.
-3. Cruzamento real Conservador / Moderado / Arrojado com o produto do CSV.
-4. Print da execução com os 4 nós em sucesso e 10 itens na resposta.
+2. Workflow em `n8n/workflow.json`:
+   Webhook → HTTP (CSV) → Cruzar perfil → Gemini Email → Montar e-mail → IF → Respond.
+3. Cruzamento Conservador / Moderado / Arrojado (case-insensitive) com o produto do CSV.
+4. Texto do e-mail gerado por `gemini-3.5-flash-lite` via HTTP + credencial `googlePalmApi`.
+5. Prints da execução com sucesso (incluindo Gemini) em `docs/prints/`.
 
 Página: https://digitalinnovationone.github.io/dio-lab-assistente-investimentos-rpa-n8n/
 
@@ -16,11 +18,13 @@ CSV: https://digitalinnovationone.github.io/dio-lab-assistente-investimentos-rpa
 ## Como rodar
 
 1. `n8n start`
-2. Importar `n8n/workflow.json` e publicar o fluxo.
+2. Importar `n8n/workflow.json`, criar a credencial **Google Gemini (PaLM) Api** e publicar o fluxo.
 3. `pip install requests beautifulsoup4`
 4. `python rpa/extrair_clientes.py`
 
 Webhook padrão: `http://127.0.0.1:5678/webhook/clientes`
+
+Não cole a API key no repositório nem no chat.
 
 ## Prints
 
@@ -28,14 +32,14 @@ Webhook padrão: `http://127.0.0.1:5678/webhook/clientes`
 
 Mais prints em `docs/prints/`.
 
-## Desafio com Gemini e Gmail
+## Gmail (opcional / desafio completo)
 
-A aula segue com LLM gerando o texto do e-mail e o nó Gmail enviando. Eu tenho a chave Gemini e o próximo passo é:
+O fluxo já devolve `email_to`, `assunto` e `corpo_email`. Para enviar de verdade:
 
-1. Criar a credencial Gemini no n8n (não colar a chave no README).
-2. Trocar/estender o nó de mensagem para o modelo gerar o texto.
-3. Conectar o Gmail na conta e validar o envio.
+1. Conectar credencial OAuth do Gmail no n8n.
+2. Ligar o nó Gmail depois de **Montar e-mail** (ou no ramo `true` do IF).
 
 ## Decisão técnica
 
-A mensagem do MVP sai do Code com os dados do cliente e do CSV, sem pagar API. Assim o print fecha. A IA entra no desafio completo, em cima desse mesmo fluxo.
+- LangChain/`lmChatGoogleGemini` ficou instável nesta versão do n8n (modelo antigo 404 / 3.8-flash travava).
+- A chamada HTTP direta em `generateContent` com `gemini-3.5-flash-lite` fechou o desafio de IA com resposta rápida e estável.

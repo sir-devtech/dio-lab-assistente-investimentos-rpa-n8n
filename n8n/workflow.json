@@ -1,149 +1,147 @@
-[
-  {
-    "updatedAt": "2026-11-16T11:21:53.915Z",
-    "createdAt": "2026-11-16T11:21:53.915Z",
-    "id": "S5gBa4eEuHtaubDk",
-    "name": "Assistente de Investimentos RPA",
-    "description": null,
-    "active": true,
-    "isArchived": false,
-    "nodes": [
-      {
-        "parameters": {
-          "httpMethod": "POST",
-          "path": "clientes",
-          "responseMode": "responseNode",
-          "options": {}
-        },
-        "id": "webhook-clientes",
-        "name": "Webhook",
-        "type": "n8n-nodes-base.webhook",
-        "typeVersion": 2.1,
-        "position": [
-          240,
-          300
-        ],
-        "webhookId": "clientes"
+{
+  "name": "Assistente de Investimentos RPA",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "clientes",
+        "responseMode": "responseNode",
+        "options": {}
       },
-      {
-        "parameters": {
-          "url": "https://digitalinnovationone.github.io/dio-lab-assistente-investimentos-rpa-n8n/data.csv",
-          "options": {
+      "id": "webhook-clientes",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [0, 300],
+      "webhookId": "clientes"
+    },
+    {
+      "parameters": {
+        "url": "https://digitalinnovationone.github.io/dio-lab-assistente-investimentos-rpa-n8n/data.csv",
+        "options": {
+          "response": {
             "response": {
-              "response": {
-                "responseFormat": "text"
-              }
+              "responseFormat": "text"
             }
           }
-        },
-        "id": "http-csv",
-        "name": "HTTP Request",
-        "type": "n8n-nodes-base.httpRequest",
-        "typeVersion": 4.2,
-        "position": [
-          480,
-          300
-        ]
+        }
       },
-      {
-        "parameters": {
-          "jsCode": "const entrada = $('Webhook').first().json;\nconst clientes = Array.isArray(entrada.clientes)\n  ? entrada.clientes\n  : Array.isArray(entrada.body?.clientes)\n    ? entrada.body.clientes\n    : Array.isArray(entrada)\n      ? entrada\n      : [];\n\nconst csvBruto = $input.first().json.data ?? $input.first().json;\nconst csvTexto = typeof csvBruto === 'string' ? csvBruto : String(csvBruto);\n\nconst linhas = csvTexto.trim().split(/\\r?\\n/).slice(1);\nconst investimentos = linhas\n  .map((linha) => {\n    const [perfil, produto, minimo, rentabilidade] = linha.split(',');\n    return {\n      perfil: (perfil || '').trim(),\n      produto: (produto || '').trim(),\n      minimo: Number((minimo || '0').trim()),\n      rentabilidade: (rentabilidade || '').trim(),\n    };\n  })\n  .filter((item) => item.perfil && item.produto);\n\nfunction saldoNumero(saldoTexto) {\n  return Number(\n    String(saldoTexto)\n      .replace(/R\\$\\s?/g, '')\n      .replace(/\\./g, '')\n      .replace(',', '.')\n  );\n}\n\nconst mensagens = clientes.map((cliente) => {\n  const saldo = saldoNumero(cliente.saldo);\n  const opcoes = investimentos\n    .filter((item) => item.perfil === cliente.perfil)\n    .filter((item) => saldo >= item.minimo);\n\n  const escolha = opcoes[0] || investimentos.find((item) => item.perfil === cliente.perfil);\n\n  let mensagem;\n  if (!escolha) {\n    mensagem = `${cliente.nome}, nao encontrei produto para o perfil ${cliente.perfil}.`;\n  } else if (cliente.perfil === 'Conservador') {\n    mensagem = `${cliente.nome}, com saldo ${cliente.saldo} e perfil Conservador, a indicacao e ${escolha.produto} (minimo R$ ${escolha.minimo}) com rentabilidade ${escolha.rentabilidade}. Foco em renda fixa e seguranca.`;\n  } else if (cliente.perfil === 'Moderado') {\n    mensagem = `${cliente.nome}, com saldo ${cliente.saldo} e perfil Moderado, a indicacao e ${escolha.produto} (minimo R$ ${escolha.minimo}) com rentabilidade ${escolha.rentabilidade}. Mix equilibrado entre renda fixa e variavel.`;\n  } else {\n    mensagem = `${cliente.nome}, com saldo ${cliente.saldo} e perfil Arrojado, a indicacao e ${escolha.produto} (minimo R$ ${escolha.minimo}) com rentabilidade ${escolha.rentabilidade}. Enfase em maior potencial de retorno.`;\n  }\n\n  return {\n    json: {\n      nome: cliente.nome,\n      email: cliente.email,\n      saldo: cliente.saldo,\n      perfil: cliente.perfil,\n      produto: escolha?.produto || null,\n      rentabilidade: escolha?.rentabilidade || null,\n      mensagem,\n    },\n  };\n});\n\nreturn mensagens;"
-        },
-        "id": "code-cruzamento",
-        "name": "Code in JavaScript",
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
-        "position": [
-          720,
-          300
-        ]
-      },
-      {
-        "parameters": {
-          "respondWith": "allIncomingItems",
-          "options": {}
-        },
-        "id": "respond-webhook",
-        "name": "Respond to Webhook",
-        "type": "n8n-nodes-base.respondToWebhook",
-        "typeVersion": 1.4,
-        "position": [
-          960,
-          300
-        ]
-      }
-    ],
-    "connections": {
-      "Webhook": {
-        "main": [
-          [
-            {
-              "node": "HTTP Request",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "HTTP Request": {
-        "main": [
-          [
-            {
-              "node": "Code in JavaScript",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Code in JavaScript": {
-        "main": [
-          [
-            {
-              "node": "Respond to Webhook",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      }
+      "id": "http-csv",
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [220, 300]
     },
-    "settings": {
-      "executionOrder": "v1"
+    {
+      "parameters": {
+        "jsCode": "const entrada = $('Webhook').first().json;\nconst clientes = Array.isArray(entrada.clientes)\n  ? entrada.clientes\n  : Array.isArray(entrada.body?.clientes)\n    ? entrada.body.clientes\n    : Array.isArray(entrada)\n      ? entrada\n      : [];\n\nconst csvBruto = $input.first().json.data ?? $input.first().json;\nconst csvTexto = typeof csvBruto === 'string' ? csvBruto : String(csvBruto);\n\nconst linhas = csvTexto.trim().split(/\\r?\\n/).slice(1);\nconst investimentos = linhas\n  .map((linha) => {\n    const [perfil, produto, minimo, rentabilidade] = linha.split(',');\n    return {\n      perfil: (perfil || '').trim(),\n      produto: (produto || '').trim(),\n      minimo: Number((minimo || '0').trim()),\n      rentabilidade: (rentabilidade || '').trim(),\n    };\n  })\n  .filter((item) => item.perfil && item.produto);\n\nfunction saldoNumero(saldoTexto) {\n  return Number(\n    String(saldoTexto)\n      .replace(/R\\$\\s?/g, '')\n      .replace(/\\./g, '')\n      .replace(',', '.')\n  );\n}\n\nreturn clientes.map((cliente) => {\n  const saldo = saldoNumero(cliente.saldo);\n  const perfilNorm = String(cliente.perfil || '').trim().toLowerCase();\n  const opcoes = investimentos\n    .filter((item) => item.perfil.toLowerCase() === perfilNorm)\n    .filter((item) => saldo >= item.minimo);\n  const escolha = opcoes[0] || investimentos.find((item) => item.perfil.toLowerCase() === perfilNorm);\n\n  const prompt = [\n    'Escreva um e-mail curto em portugues do Brasil para o cliente abaixo.',\n    'Tom amigavel e profissional. Entre 4 e 8 linhas.',\n    'Nao prometa lucro garantido. Nao use linguagem agressiva.',\n    `Nome: ${cliente.nome}`,\n    `Email: ${cliente.email}`,\n    `Saldo: ${cliente.saldo}`,\n    `Perfil: ${cliente.perfil}`,\n    `Produto recomendado: ${escolha?.produto || 'indisponivel'}`,\n    `Rentabilidade: ${escolha?.rentabilidade || 'n/a'}`,\n    `Minimo do produto: R$ ${escolha?.minimo ?? 0}`,\n    'Devolva so o corpo do e-mail, sem assunto e sem markdown.',\n  ].join('\\n');\n\n  return {\n    json: {\n      email_to: cliente.email,\n      nome: cliente.nome,\n      saldo: cliente.saldo,\n      perfil: cliente.perfil,\n      produto: escolha?.produto || null,\n      rentabilidade: escolha?.rentabilidade || null,\n      minimo: escolha?.minimo ?? null,\n      chatInput: prompt,\n    },\n  };\n});"
+      },
+      "id": "code-cruzamento",
+      "name": "Cruzar perfil",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 300]
     },
-    "staticData": null,
-    "meta": null,
-    "nodeGroups": [],
-    "pinData": null,
-    "versionId": "75e59e2b-5723-441b-b501-69d3e60b36df",
-    "activeVersionId": "75e59e2b-5723-441b-b501-69d3e60b36df",
-    "versionCounter": 1,
-    "triggerCount": 1,
-    "sourceWorkflowId": null,
-    "tags": [],
-    "shared": [
-      {
-        "updatedAt": "2026-11-16T11:21:53.920Z",
-        "createdAt": "2026-11-16T11:21:53.920Z",
-        "role": "workflow:owner",
-        "workflowId": "S5gBa4eEuHtaubDk",
-        "projectId": "XeHgcDJqpe73LkZ0",
-        "project": {
-          "updatedAt": "2026-11-13T01:34:14.956Z",
-          "createdAt": "2026-11-13T01:32:34.141Z",
-          "id": "XeHgcDJqpe73LkZ0",
-          "name": "moises oliveira <moises@teste.com>",
-          "type": "personal",
-          "icon": null,
-          "description": null,
-          "customTelemetryTags": [],
-          "creatorId": "980826be-8eba-4aec-87d9-8907bf79dcc3"
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googlePalmApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [\n    {\n      \"parts\": [\n        {\n          \"text\": {{ JSON.stringify($json.chatInput) }}\n        }\n      ]\n    }\n  ],\n  \"generationConfig\": {\n    \"temperature\": 0.4,\n    \"maxOutputTokens\": 512\n  }\n}",
+        "options": {}
+      },
+      "id": "http-gemini",
+      "name": "Gemini Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [660, 300],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "gArpAPCcIlLwdtlh",
+          "name": "Google Gemini(PaLM) Api account"
         }
       }
-    ],
-    "versionMetadata": {
-      "name": null,
-      "description": null
+    },
+    {
+      "parameters": {
+        "jsCode": "const cruzados = $('Cruzar perfil').all();\nconst gerados = $input.all();\n\nreturn gerados.map((item, index) => {\n  const base = cruzados[index]?.json || {};\n  const parts = item.json?.candidates?.[0]?.content?.parts || [];\n  const texto = parts.map((p) => p.text || '').join('\\n').trim();\n  return {\n    json: {\n      email_to: base.email_to,\n      nome: base.nome,\n      saldo: base.saldo,\n      perfil: base.perfil,\n      produto: base.produto,\n      rentabilidade: base.rentabilidade,\n      assunto: `Sugestao de investimento para ${base.nome}`,\n      corpo_email: texto || 'Nao foi possivel gerar o e-mail.',\n    },\n  };\n});"
+      },
+      "id": "code-email",
+      "name": "Montar e-mail",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [880, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "tem-corpo",
+              "leftValue": "={{ $json.corpo_email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-email",
+      "name": "IF",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1100, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "id": "respond-webhook",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [1320, 300]
     }
-  }
-]
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{ "node": "HTTP Request", "type": "main", "index": 0 }]]
+    },
+    "HTTP Request": {
+      "main": [[{ "node": "Cruzar perfil", "type": "main", "index": 0 }]]
+    },
+    "Cruzar perfil": {
+      "main": [[{ "node": "Gemini Email", "type": "main", "index": 0 }]]
+    },
+    "Gemini Email": {
+      "main": [[{ "node": "Montar e-mail", "type": "main", "index": 0 }]]
+    },
+    "Montar e-mail": {
+      "main": [[{ "node": "IF", "type": "main", "index": 0 }]]
+    },
+    "IF": {
+      "main": [
+        [{ "node": "Respond to Webhook", "type": "main", "index": 0 }],
+        [{ "node": "Respond to Webhook", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
+}
