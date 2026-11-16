@@ -1,0 +1,29 @@
+[
+  {
+    "nome": "Ana Silva",
+    "email": "ana@email.com",
+    "saldo": "R$ 12.500,00",
+    "perfil": "Conservador",
+    "produto": "Poupança",
+    "rentabilidade": "6.2%",
+    "mensagem": "Ana Silva, com saldo R$ 12.500,00 e perfil Conservador, a indicacao e Poupança (minimo R$ 100) com rentabilidade 6.2%. Foco em renda fixa e seguranca."
+  },
+  {
+    "nome": "Bruno Lima",
+    "email": "bruno@email.com",
+    "saldo": "R$ 3.200,00",
+    "perfil": "Moderado",
+    "produto": "CDB Prefixado",
+    "rentabilidade": "14.0%",
+    "mensagem": "Bruno Lima, com saldo R$ 3.200,00 e perfil Moderado, a indicacao e CDB Prefixado (minimo R$ 1000) com rentabilidade 14.0%. Mix equilibrado entre renda fixa e variavel."
+  },
+  {
+    "nome": "Carla Souza",
+    "email": "carla@email.com",
+    "saldo": "R$ 28.900,00",
+    "perfil": "Arrojado",
+    "produto": "Ações ETF",
+    "rentabilidade": "Variável",
+    "mensagem": "Carla Souza, com saldo R$ 28.900,00 e perfil Arrojado, a indicacao e Ações ETF (minimo R$ 500) com rentabilidade Variável. Enfase em maior potencial de retorno."
+  }
+]

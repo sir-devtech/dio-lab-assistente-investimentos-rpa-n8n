@@ -1,0 +1,149 @@
+[
+  {
+    "updatedAt": "2026-11-16T11:21:53.915Z",
+    "createdAt": "2026-11-16T11:21:53.915Z",
+    "id": "S5gBa4eEuHtaubDk",
+    "name": "Assistente de Investimentos RPA",
+    "description": null,
+    "active": true,
+    "isArchived": false,
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "clientes",
+          "responseMode": "responseNode",
+          "options": {}
+        },
+        "id": "webhook-clientes",
+        "name": "Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          240,
+          300
+        ],
+        "webhookId": "clientes"
+      },
+      {
+        "parameters": {
+          "url": "https://digitalinnovationone.github.io/dio-lab-assistente-investimentos-rpa-n8n/data.csv",
+          "options": {
+            "response": {
+              "response": {
+                "responseFormat": "text"
+              }
+            }
+          }
+        },
+        "id": "http-csv",
+        "name": "HTTP Request",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          480,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const entrada = $('Webhook').first().json;\nconst clientes = Array.isArray(entrada.clientes)\n  ? entrada.clientes\n  : Array.isArray(entrada.body?.clientes)\n    ? entrada.body.clientes\n    : Array.isArray(entrada)\n      ? entrada\n      : [];\n\nconst csvBruto = $input.first().json.data ?? $input.first().json;\nconst csvTexto = typeof csvBruto === 'string' ? csvBruto : String(csvBruto);\n\nconst linhas = csvTexto.trim().split(/\\r?\\n/).slice(1);\nconst investimentos = linhas\n  .map((linha) => {\n    const [perfil, produto, minimo, rentabilidade] = linha.split(',');\n    return {\n      perfil: (perfil || '').trim(),\n      produto: (produto || '').trim(),\n      minimo: Number((minimo || '0').trim()),\n      rentabilidade: (rentabilidade || '').trim(),\n    };\n  })\n  .filter((item) => item.perfil && item.produto);\n\nfunction saldoNumero(saldoTexto) {\n  return Number(\n    String(saldoTexto)\n      .replace(/R\\$\\s?/g, '')\n      .replace(/\\./g, '')\n      .replace(',', '.')\n  );\n}\n\nconst mensagens = clientes.map((cliente) => {\n  const saldo = saldoNumero(cliente.saldo);\n  const opcoes = investimentos\n    .filter((item) => item.perfil === cliente.perfil)\n    .filter((item) => saldo >= item.minimo);\n\n  const escolha = opcoes[0] || investimentos.find((item) => item.perfil === cliente.perfil);\n\n  let mensagem;\n  if (!escolha) {\n    mensagem = `${cliente.nome}, nao encontrei produto para o perfil ${cliente.perfil}.`;\n  } else if (cliente.perfil === 'Conservador') {\n    mensagem = `${cliente.nome}, com saldo ${cliente.saldo} e perfil Conservador, a indicacao e ${escolha.produto} (minimo R$ ${escolha.minimo}) com rentabilidade ${escolha.rentabilidade}. Foco em renda fixa e seguranca.`;\n  } else if (cliente.perfil === 'Moderado') {\n    mensagem = `${cliente.nome}, com saldo ${cliente.saldo} e perfil Moderado, a indicacao e ${escolha.produto} (minimo R$ ${escolha.minimo}) com rentabilidade ${escolha.rentabilidade}. Mix equilibrado entre renda fixa e variavel.`;\n  } else {\n    mensagem = `${cliente.nome}, com saldo ${cliente.saldo} e perfil Arrojado, a indicacao e ${escolha.produto} (minimo R$ ${escolha.minimo}) com rentabilidade ${escolha.rentabilidade}. Enfase em maior potencial de retorno.`;\n  }\n\n  return {\n    json: {\n      nome: cliente.nome,\n      email: cliente.email,\n      saldo: cliente.saldo,\n      perfil: cliente.perfil,\n      produto: escolha?.produto || null,\n      rentabilidade: escolha?.rentabilidade || null,\n      mensagem,\n    },\n  };\n});\n\nreturn mensagens;"
+        },
+        "id": "code-cruzamento",
+        "name": "Code in JavaScript",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          720,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "respondWith": "allIncomingItems",
+          "options": {}
+        },
+        "id": "respond-webhook",
+        "name": "Respond to Webhook",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.4,
+        "position": [
+          960,
+          300
+        ]
+      }
+    ],
+    "connections": {
+      "Webhook": {
+        "main": [
+          [
+            {
+              "node": "HTTP Request",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "HTTP Request": {
+        "main": [
+          [
+            {
+              "node": "Code in JavaScript",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Code in JavaScript": {
+        "main": [
+          [
+            {
+              "node": "Respond to Webhook",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1"
+    },
+    "staticData": null,
+    "meta": null,
+    "nodeGroups": [],
+    "pinData": null,
+    "versionId": "75e59e2b-5723-441b-b501-69d3e60b36df",
+    "activeVersionId": "75e59e2b-5723-441b-b501-69d3e60b36df",
+    "versionCounter": 1,
+    "triggerCount": 1,
+    "sourceWorkflowId": null,
+    "tags": [],
+    "shared": [
+      {
+        "updatedAt": "2026-11-16T11:21:53.920Z",
+        "createdAt": "2026-11-16T11:21:53.920Z",
+        "role": "workflow:owner",
+        "workflowId": "S5gBa4eEuHtaubDk",
+        "projectId": "XeHgcDJqpe73LkZ0",
+        "project": {
+          "updatedAt": "2026-11-13T01:34:14.956Z",
+          "createdAt": "2026-11-13T01:32:34.141Z",
+          "id": "XeHgcDJqpe73LkZ0",
+          "name": "moises oliveira <moises@teste.com>",
+          "type": "personal",
+          "icon": null,
+          "description": null,
+          "customTelemetryTags": [],
+          "creatorId": "980826be-8eba-4aec-87d9-8907bf79dcc3"
+        }
+      }
+    ],
+    "versionMetadata": {
+      "name": null,
+      "description": null
+    }
+  }
+]
