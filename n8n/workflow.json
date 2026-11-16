@@ -107,6 +107,38 @@
     },
     {
       "parameters": {
+        "sendTo": "={{ $json.email_to }}",
+        "subject": "={{ $json.assunto }}",
+        "emailType": "text",
+        "message": "={{ $json.corpo_email }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "gmail-enviar",
+      "name": "Enviar Gmail",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [1320, 200],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "k3oMosnsVEtMrlkA",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const montados = $('Montar e-mail').all();\nconst enviados = $input.all();\n\nreturn enviados.map((item, index) => {\n  const base = montados[index]?.json || {};\n  return {\n    json: {\n      ...base,\n      email_enviado: Boolean(item.json?.id),\n      gmail_message_id: item.json?.id || null,\n    },\n  };\n});"
+      },
+      "id": "code-resposta",
+      "name": "Preparar resposta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1540, 200]
+    },
+    {
+      "parameters": {
         "respondWith": "allIncomingItems",
         "options": {}
       },
@@ -114,7 +146,7 @@
       "name": "Respond to Webhook",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.4,
-      "position": [1320, 300]
+      "position": [1760, 300]
     }
   ],
   "connections": {
@@ -135,9 +167,15 @@
     },
     "IF": {
       "main": [
-        [{ "node": "Respond to Webhook", "type": "main", "index": 0 }],
+        [{ "node": "Enviar Gmail", "type": "main", "index": 0 }],
         [{ "node": "Respond to Webhook", "type": "main", "index": 0 }]
       ]
+    },
+    "Enviar Gmail": {
+      "main": [[{ "node": "Preparar resposta", "type": "main", "index": 0 }]]
+    },
+    "Preparar resposta": {
+      "main": [[{ "node": "Respond to Webhook", "type": "main", "index": 0 }]]
     }
   },
   "settings": {
